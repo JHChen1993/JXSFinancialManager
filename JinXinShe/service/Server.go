@@ -45,8 +45,8 @@ func (sv *Server) Start(ls net.Listener) error {
 // newConnect 新建客户端连接
 func (sv *Server) newConnect(ccon net.Conn) {
 	cnnid := clientId.GetAndIncrement()
-	scc := NewClientConn(cnnid, ccon, sv.clsChan)
-	sv.ClientConns.Store(connid, scc)
+	scc := NewClientConn(cnnid, ccon, sv)
+	sv.ClientConns.Store(cnnid, scc)
 	// 连接开始工作
 	scc.Start()
 }
