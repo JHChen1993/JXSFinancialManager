@@ -4,6 +4,10 @@ import (
 	"sync/atomic"
 )
 
+type WriteCloser interface {
+	Close()
+}
+
 // AutomicInt64 原子计数器
 type AutomicInt64 int64
 

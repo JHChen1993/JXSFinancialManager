@@ -2,6 +2,7 @@
 package service
 
 import (
+	"fmt"
 	"net"
 	"sync"
 )
@@ -17,16 +18,35 @@ func init() {
 
 // Server 服务器对象
 type Server struct {
-	clsChan     chan struct{} // 通知conn对象关闭
-	ClientConns sync.Map
+	endSever    chan struct{} // 通知conn对象关闭
+	clientConns *sync.Map
 	wg          *sync.WaitGroup
+	ls          net.Listener
+}
+
+// NewServer 创建服务器对象
+func NewServer() *Server {
+	sv := Server{
+		endSever:    make(chan struct{}),
+		clientConns: &sync.Map{},
+		wg:          &sync.WaitGroup{},
+	}
+	return &sv
+}
+func (sv *Server) Stop() {
+	close(sv.endSever)
+	sv.ls.Close()
+	sv.wg.Wait()
+	fmt.Println("service stop！")
 }
 
 // Start 启动服务器
 func (sv *Server) Start(ls net.Listener) error {
+	sv.wg.Add(1)
+	sv.ls = ls
 	// <TODO: 应该做一些配置信息检查>
 	defer func() {
-		ls.Close()
+		sv.wg.Done()
 	}()
 	for {
 		con, err := ls.Accept()
@@ -46,7 +66,7 @@ func (sv *Server) Start(ls net.Listener) error {
 func (sv *Server) newConnect(ccon net.Conn) {
 	cnnid := clientId.GetAndIncrement()
 	scc := NewClientConn(cnnid, ccon, sv)
-	sv.ClientConns.Store(cnnid, scc)
+	sv.clientConns.Store(cnnid, scc)
 	// 连接开始工作
 	scc.Start()
 }
